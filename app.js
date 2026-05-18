@@ -163,33 +163,53 @@ function resetForm() {
     }
 }
 
-// Téléchargement PDF
-async function downloadPDF() {
-    showToast('Génération du PDF en cours...');
-    
-    try {
-        generateCV();
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        const element = document.querySelector('.cv-content');
-        if (!element) throw new Error('Contenu introuvable');
-        
-        const filename = `CV_${(elements.fullname.value || 'candidat').replace(/[^a-z0-9]/gi, '_')}.pdf`;
-        
-        const opt = {
-            margin: [0.5, 0.5, 0.5, 0.5],
-            filename: filename,
-            image: { type: 'jpeg', quality: 0.95 },
-            html2canvas: { scale: 2, letterRendering: true, useCORS: true },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+// Téléchargement PDF via impression navigateur
+function downloadPDF() {
+    generateCV();
+
+    const cvElement = document.querySelector('.cv-content');
+    if (!cvElement) { showToast('Contenu introuvable', 'error'); return; }
+
+    // Récupère tous les styles de la page
+    const styles = Array.from(document.styleSheets).map(sheet => {
+        try {
+            return Array.from(sheet.cssRules).map(r => r.cssText).join('\n');
+        } catch(e) { return ''; }
+    }).join('\n');
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    printWindow.document.write(`<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>CV - ${elements.fullname.value || 'CV'}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ${styles}
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        body { margin: 0; padding: 0; background: white; }
+        .cv-content { padding: 1.5rem; max-width: 210mm; margin: 0 auto; }
+        @page { size: A4; margin: 10mm; }
+        @media print {
+            body { margin: 0; }
+            .cv-content { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    ${cvElement.outerHTML}
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+                window.onafterprint = function() { window.close(); };
+            }, 500);
         };
-        
-        await html2pdf().set(opt).from(element).save();
-        showToast('PDF téléchargé avec succès !', 'success');
-    } catch (error) {
-        console.error('Erreur PDF:', error);
-        showToast('Erreur lors de la génération du PDF', 'error');
-    }
+    <\/script>
+</body>
+</html>`);
+    printWindow.document.close();
+    showToast('Fenêtre d\'impression ouverte — choisissez "Enregistrer en PDF"', 'success');
 }
 
 // Toast notification
