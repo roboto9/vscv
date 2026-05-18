@@ -1,0 +1,220 @@
+/* Template 1: Moderne - Élégant */
+.template-1 {
+    font-family: 'Inter', sans-serif;
+    background: white;
+}
+
+.template-1 .cv-header {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+}
+
+/* Template 2: Classique - Professionnel */
+.template-2 {
+    font-family: 'Georgia', serif;
+    background: white;
+}
+
+.template-2 .cv-header {
+    border-bottom: 3px solid #2c3e50;
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* Template 3: Minimaliste - Clair */
+.template-3 {
+    font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #fafafa;
+}
+
+.template-3 .cv-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* Template 4: Tech - Innovant */
+.template-4 {
+    font-family: 'SF Mono', monospace;
+    background: #0a0e27;
+    color: #00ff88;
+}
+
+.template-4 .cv-card {
+    background: #0f1322;
+    border: 1px solid #00ff8820;
+}
+
+/* Template 5: Créatif - Artistique */
+.template-5 {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.template-5 .cv-card {
+    background: white;
+    border-radius: 30px;
+    overflow: hidden;
+}
+
+/* Template 6: Corporate - Sobre */
+.template-6 {
+    font-family: 'Roboto', sans-serif;
+    background: #f0f2f5;
+}
+
+.template-6 .cv-card {
+    background: white;
+    border-left: 4px solid #1a73e8;
+}
+
+/* Template 7: Nordic - Scandi */
+.template-7 {
+    font-family: 'Nunito', sans-serif;
+    background: #e8f0f2;
+}
+
+.template-7 .cv-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+/* Template 8: Bold - Audacieux */
+.template-8 {
+    font-family: 'Montserrat', sans-serif;
+    background: #1a1a2e;
+}
+
+.template-8 .cv-card {
+    background: #16213e;
+    color: #eee;
+}
+
+/* Template 9: Soft - Doux */
+.template-9 {
+    font-family: 'Quicksand', sans-serif;
+    background: #fdeff2;
+}
+
+.template-9 .cv-card {
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Template 10: Premium - Luxe */
+.template-10 {
+    font-family: 'Playfair Display', serif;
+    background: #1a1a1a;
+}
+
+.template-10 .cv-card {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+}
+
+/* Styles communs pour tous les templates */
+.cv-content {
+    padding: 2rem;
+}
+
+.cv-header {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
+
+.cv-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.cv-titles {
+    flex: 1;
+}
+
+.cv-name {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.cv-job {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+.cv-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.85rem;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cv-section {
+    margin: 1.5rem 0;
+}
+
+.cv-section h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid currentColor;
+}
+
+.cv-text {
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.skills-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.skill-tag {
+    padding: 0.3rem 0.8rem;
+    background: rgba(0,0,0,0.05);
+    border-radius: 20px;
+    font-size: 0.85rem;
+}
+
+.flex-2cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .flex-2cols {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .cv-header {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .cv-contact {
+        justify-content: center;
+    }
+}
