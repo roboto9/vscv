@@ -27,14 +27,32 @@ const elements = {
 // Template Gallery
 const templatesGrid = document.getElementById('templatesGrid');
 
+// Données d'exemple pour les previews
+const previewData = {
+    fullname: 'Sophie Moreau',
+    jobtitle: 'Développeuse Full Stack',
+    email: 'sophie@exemple.fr',
+    phone: '06 12 34 56 78',
+    location: 'Lyon, France',
+    birthdate: '15/03/1995',
+    summary: 'Développeuse passionnée avec 5 ans d\'expérience dans la création d\'applications web modernes.',
+    experience: '2023 - aujourd\'hui : Dev Full Stack - TechCorp\n2021 - 2023 : Dev Front-end - WebAgence\n2020 - 2021 : Stagiaire - StartupHub',
+    education: '2021 : Master Web - Université Lyon\n2018 : Licence Informatique - Université Lyon',
+    skills: 'JavaScript, React, Node.js, Python, MongoDB',
+    languages: 'Français (natif), Anglais (C1)',
+    interests: 'Sport, Voyages, Lecture',
+    photo: null
+};
+
 function initTemplatesGallery() {
     templates.forEach((template, index) => {
         const card = document.createElement('div');
         card.className = 'template-card';
+        const renderedCV = template.render(previewData);
         card.innerHTML = `
             <div class="template-preview">
-                <div class="preview-placeholder" style="background: ${template.color}">
-                    <i class="fas fa-file-alt" style="font-size: 3rem; color: white;"></i>
+                <div class="template-preview-scaler">
+                    <div class="cv-content template-${index + 1}">${renderedCV}</div>
                 </div>
             </div>
             <div class="template-info">
@@ -170,11 +188,10 @@ function downloadPDF() {
     const cvElement = document.querySelector('.cv-content');
     if (!cvElement) { showToast('Contenu introuvable', 'error'); return; }
 
-    // Récupère tous les styles de la page
+    // Récupère tous les styles de la page (liens externes inclus)
     const styles = Array.from(document.styleSheets).map(sheet => {
-        try {
-            return Array.from(sheet.cssRules).map(r => r.cssText).join('\n');
-        } catch(e) { return ''; }
+        try { return Array.from(sheet.cssRules).map(r => r.cssText).join('\n'); }
+        catch(e) { return ''; }
     }).join('\n');
 
     const printWindow = window.open('', '_blank', 'width=900,height=700');
@@ -186,13 +203,36 @@ function downloadPDF() {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         ${styles}
-        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-        body { margin: 0; padding: 0; background: white; }
-        .cv-content { padding: 1.5rem; max-width: 210mm; margin: 0 auto; }
-        @page { size: A4; margin: 10mm; }
+
+        /* ---- Forcer UNE seule page A4 ---- */
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: white; width: 210mm; }
+
+        .cv-content {
+            width: 210mm;
+            max-width: 210mm;
+            min-height: auto !important;
+            padding: 10mm 12mm !important;
+            margin: 0 !important;
+            font-size: 0.80rem !important;
+            line-height: 1.35 !important;
+            overflow: hidden;
+            background: white;
+        }
+        .cv-content .cv-name  { font-size: 1.5rem !important; }
+        .cv-content .cv-job   { font-size: 0.9rem !important; }
+        .cv-content .cv-header { padding: 1rem !important; margin-bottom: 1rem !important; border-radius: 10px !important; }
+        .cv-content .cv-section { margin: 0.55rem 0 !important; }
+        .cv-content .cv-section h3 { font-size: 0.82rem !important; margin-bottom: 0.25rem !important; padding-bottom: 0.2rem !important; }
+        .cv-content .cv-text  { font-size: 0.78rem !important; line-height: 1.3 !important; }
+        .cv-content .skill-tag { font-size: 0.70rem !important; padding: 0.12rem 0.45rem !important; }
+        .cv-content .flex-2cols { gap: 0.8rem !important; }
+        .cv-content .skills-list { gap: 0.3rem !important; }
+
+        @page { size: A4 portrait; margin: 0; }
         @media print {
-            body { margin: 0; }
-            .cv-content { padding: 0; }
+            html, body { width: 210mm; height: 297mm; overflow: hidden; }
+            .cv-content { page-break-inside: avoid; break-inside: avoid; }
         }
     </style>
 </head>
@@ -203,11 +243,11 @@ function downloadPDF() {
             setTimeout(function() {
                 window.print();
                 window.onafterprint = function() { window.close(); };
-            }, 500);
+            }, 600);
         };
     <\/script>
 </body>
-</html>`);
+</html>\`);
     printWindow.document.close();
     showToast('Fenêtre d\'impression ouverte — choisissez "Enregistrer en PDF"', 'success');
 }
