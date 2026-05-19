@@ -616,3 +616,61 @@ body {
         grid-template-columns: 1fr;
     }
 }
+/* ===== GALLERY TEMPLATE PREVIEWS ===== */
+.template-preview {
+    height: 380px;
+    background: var(--bg-light);
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+}
+
+.template-preview-scaler {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 210%;   /* zone de rendu 2x plus large = scale 0.48 */
+    transform: scale(0.48);
+    transform-origin: top left;
+    pointer-events: none;
+    background: white;
+}
+
+.template-preview-scaler .cv-content {
+    min-height: 800px;
+    padding: 2rem;
+    background: white;
+}
+
+/* ===== PDF / IMPRESSION UNE SEULE PAGE ===== */
+@media print {
+    /* Cache tout sauf le CV */
+    body > *:not(#print-root) { display: none !important; }
+
+    @page {
+        size: A4 portrait;
+        margin: 8mm;
+    }
+
+    .cv-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        font-size: 0.78rem !important;
+        line-height: 1.35 !important;
+        page-break-inside: avoid;
+        overflow: hidden;
+    }
+
+    /* Compresse les sections pour tout faire tenir */
+    .cv-content .cv-section { margin: 0.6rem 0 !important; }
+    .cv-content .cv-section h3 { font-size: 0.85rem !important; margin-bottom: 0.3rem !important; padding-bottom: 0.2rem !important; }
+    .cv-content .cv-name { font-size: 1.4rem !important; }
+    .cv-content .cv-job { font-size: 0.9rem !important; }
+    .cv-content .cv-header { padding: 1rem !important; margin-bottom: 1rem !important; }
+    .cv-content .cv-text { font-size: 0.78rem !important; line-height: 1.3 !important; }
+    .cv-content .skill-tag { font-size: 0.72rem !important; padding: 0.15rem 0.5rem !important; }
+    .cv-content .flex-2cols { gap: 1rem !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}
