@@ -171,53 +171,91 @@ function resetForm() {
     }
 }
 
-// Téléchargement PDF via fenêtre d'impression
+// Téléchargement PDF — fetch les CSS puis ouvre la fenêtre d'impression
 function downloadPDF() {
     generateCV();
     var cvElement = document.querySelector('.cv-content');
     if (!cvElement) { showToast('Contenu introuvable', 'error'); return; }
 
-    var styles = '';
-    try {
-        styles = Array.from(document.styleSheets).map(function(sheet) {
-            try { return Array.from(sheet.cssRules).map(function(r) { return r.cssText; }).join('\n'); }
-            catch(e) { return ''; }
-        }).join('\n');
-    } catch(e) {}
+    showToast('Préparation du PDF...', 'info');
 
-    var nom = elements.fullname.value || 'CV';
+    // Récupérer les URLs des feuilles de style locales
+    var cssUrls = [];
+    Array.from(document.styleSheets).forEach(function(sheet) {
+        if (sheet.href) { cssUrls.push(sheet.href); }
+    });
+
+    // Fetch toutes les CSS en parallèle
+    var promises = cssUrls.map(function(url) {
+        return fetch(url)
+            .then(function(r) { return r.text(); })
+            .catch(function() { return ''; });
+    });
+
     var cvHTML = cvElement.outerHTML;
+    var nom = elements.fullname.value || 'CV';
+    var templateNum = currentTemplate;
 
-    var html = '<!DOCTYPE html>'
-        + '<html lang="fr"><head>'
-        + '<meta charset="UTF-8">'
-        + '<title>CV - ' + nom + '</title>'
-        + '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">'
-        + '<style>'
-        + styles
-        + '* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }'
-        + 'html, body { margin: 0; padding: 0; background: white; }'
-        + '.cv-content { width: 210mm; max-width: 210mm; padding: 10mm 12mm !important; margin: 0 auto !important; font-size: 0.80rem !important; line-height: 1.35 !important; background: white; }'
-        + '.cv-content .cv-name { font-size: 1.5rem !important; }'
-        + '.cv-content .cv-job { font-size: 0.9rem !important; }'
-        + '.cv-content .cv-header { padding: 1rem !important; margin-bottom: 1rem !important; border-radius: 10px !important; }'
-        + '.cv-content .cv-section { margin: 0.55rem 0 !important; }'
-        + '.cv-content .cv-section h3 { font-size: 0.82rem !important; margin-bottom: 0.25rem !important; padding-bottom: 0.2rem !important; }'
-        + '.cv-content .cv-text { font-size: 0.78rem !important; line-height: 1.3 !important; }'
-        + '.cv-content .skill-tag { font-size: 0.70rem !important; padding: 0.12rem 0.45rem !important; }'
-        + '.cv-content .flex-2cols { gap: 0.8rem !important; }'
-        + '.cv-content .skills-list { gap: 0.3rem !important; }'
-        + '@page { size: A4 portrait; margin: 0; }'
-        + '@media print { html, body { width: 210mm; height: 297mm; overflow: hidden; } .cv-content { page-break-inside: avoid; } }'
-        + '</style></head><body>'
-        + cvHTML
-        + '<scr' + 'ipt>window.onload=function(){setTimeout(function(){window.print();window.onafterprint=function(){window.close();};},600);};</scr' + 'ipt>'
-        + '</body></html>';
+    Promise.all(promises).then(function(cssTexts) {
+        var allCSS = cssTexts.join('\n');
 
-    var printWindow = window.open('', '_blank', 'width=900,height=700');
-    printWindow.document.write(html);
-    printWindow.document.close();
-    showToast('Choisissez "Enregistrer en PDF" dans la fenêtre d\'impression', 'success');
+        // CSS spécifique impression une page A4
+        var printCSS = ''
+            + '* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }'
+            + 'html, body { margin: 0; padding: 0; background: white; }'
+            + '.cv-content {'
+            + '  width: 190mm; max-width: 190mm;'
+            + '  padding: 8mm 10mm !important;'
+            + '  margin: 0 auto !important;'
+            + '  font-size: 0.78rem !important;'
+            + '  line-height: 1.3 !important;'
+            + '  background: white;'
+            + '}'
+            + '.cv-content .cv-name { font-size: 1.4rem !important; }'
+            + '.cv-content .cv-job { font-size: 0.88rem !important; }'
+            + '.cv-content .cv-header { padding: 0.8rem !important; margin-bottom: 0.8rem !important; border-radius: 10px !important; }'
+            + '.cv-content .cv-section { margin: 0.45rem 0 !important; }'
+            + '.cv-content .cv-section h3 { font-size: 0.80rem !important; margin-bottom: 0.2rem !important; padding-bottom: 0.15rem !important; }'
+            + '.cv-content .cv-text { font-size: 0.75rem !important; line-height: 1.25 !important; }'
+            + '.cv-content .skill-tag { font-size: 0.68rem !important; padding: 0.1rem 0.4rem !important; }'
+            + '.cv-content .flex-2cols { gap: 0.6rem !important; }'
+            + '.cv-content .skills-list { gap: 0.25rem !important; }'
+            + '.cv-content .cv-photo { width: 80px !important; height: 80px !important; }'
+            + '.cv-content .cv-contact { gap: 0.5rem !important; font-size: 0.72rem !important; }'
+            + '@page { size: A4 portrait; margin: 0; }'
+            + '@media print {'
+            + '  html, body { width: 210mm; height: 297mm; overflow: hidden; }'
+            + '  .cv-content { page-break-inside: avoid; break-inside: avoid; }'
+            + '}';
+
+        var html = '<!DOCTYPE html>'
+            + '<html lang="fr"><head>'
+            + '<meta charset="UTF-8">'
+            + '<title>CV - ' + nom + '</title>'
+            + '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">'
+            + '<style>' + allCSS + '</style>'
+            + '<style>' + printCSS + '</style>'
+            + '</head><body>'
+            + cvHTML
+            + '<scr' + 'ipt>'
+            + 'window.onload = function() {'
+            + '  setTimeout(function() {'
+            + '    window.print();'
+            + '    window.onafterprint = function() { window.close(); };'
+            + '  }, 800);'
+            + '};'
+            + '</scr' + 'ipt>'
+            + '</body></html>';
+
+        var printWindow = window.open('', '_blank', 'width=900,height=700');
+        if (!printWindow) {
+            showToast('Autorisez les popups pour télécharger le PDF', 'error');
+            return;
+        }
+        printWindow.document.write(html);
+        printWindow.document.close();
+        showToast('Choisissez "Enregistrer en PDF" dans la fenêtre d\'impression', 'success');
+    });
 }
 
 // Toast
