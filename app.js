@@ -1,6 +1,8 @@
+// État de l'application
 var currentTemplate = 1;
 var currentPhotoBase64 = null;
 
+// Éléments DOM
 var elements = {
     fullname: document.getElementById('fullname'),
     jobtitle: document.getElementById('jobtitle'),
@@ -22,6 +24,7 @@ var elements = {
     resetBtn: document.getElementById('resetBtn')
 };
 
+// Données d'exemple pour les previews de la galerie
 var previewData = {
     fullname: 'Sophie Moreau',
     jobtitle: 'Développeuse Full Stack',
@@ -38,91 +41,32 @@ var previewData = {
     photo: null
 };
 
-// CSS embarqué directement — aucun fetch nécessaire
-var EMBEDDED_CSS = [
-    '* { margin:0; padding:0; box-sizing:border-box; }',
-    'body { font-family: Inter, sans-serif; }',
+// Récupérer TOUS les styles CSS (incluant les styles inline et importés)
+function getAllCSS() {
+    var cssText = '';
+    
+    // 1. Récupérer les styles des feuilles de style
+    for (var i = 0; i < document.styleSheets.length; i++) {
+        try {
+            var sheet = document.styleSheets[i];
+            if (sheet.cssRules) {
+                for (var j = 0; j < sheet.cssRules.length; j++) {
+                    var rule = sheet.cssRules[j];
+                    if (rule.cssText) {
+                        cssText += rule.cssText + '\n';
+                    }
+                }
+            }
+        } catch(e) {
+            // Ignorer les erreurs CORS
+            console.log('StyleSheet non accessible:', e);
+        }
+    }
+    
+    return cssText;
+}
 
-    /* Communs CV */
-    '.cv-content { padding: 2rem; background: white; }',
-    '.cv-header { display:flex; gap:2rem; align-items:center; margin-bottom:2rem; flex-wrap:wrap; }',
-    '.cv-photo { width:120px; height:120px; border-radius:50%; object-fit:cover; flex-shrink:0; }',
-    '.cv-titles { flex:1; }',
-    '.cv-name { font-size:2rem; font-weight:700; margin-bottom:0.5rem; }',
-    '.cv-job { font-size:1.1rem; opacity:0.9; margin-bottom:1rem; }',
-    '.cv-contact { display:flex; flex-wrap:wrap; gap:1rem; font-size:0.85rem; }',
-    '.contact-item { display:flex; align-items:center; gap:0.5rem; }',
-    '.cv-section { margin:1.5rem 0; }',
-    '.cv-section h3 { font-size:1.1rem; margin-bottom:0.8rem; padding-bottom:0.4rem; border-bottom:2px solid currentColor; }',
-    '.cv-text { line-height:1.6; white-space:pre-line; }',
-    '.skills-list { display:flex; flex-wrap:wrap; gap:0.5rem; margin-top:0.5rem; }',
-    '.skill-tag { padding:0.3rem 0.8rem; background:rgba(0,0,0,0.07); border-radius:20px; font-size:0.85rem; }',
-    '.flex-2cols { display:grid; grid-template-columns:1fr 1fr; gap:2rem; }',
-
-    /* Template 1 */
-    '.template-1 { font-family: Inter, sans-serif; }',
-    '.template-1 .cv-header { background:linear-gradient(135deg,#2c3e50,#3498db); color:white; padding:2rem; border-radius:16px; }',
-
-    /* Template 2 */
-    '.template-2 { font-family: Georgia, serif; }',
-    '.template-2 .cv-header { border-bottom:3px solid #2c3e50; padding-bottom:1rem; }',
-
-    /* Template 3 */
-    '.template-3 { background:#fafafa; }',
-
-    /* Template 4 */
-    '.template-4 { background:#0a0e27; color:#00ff88; }',
-
-    /* Template 5 */
-    '.template-5 { background:linear-gradient(135deg,#667eea,#764ba2); }',
-
-    /* Template 6 */
-    '.template-6 { background:#f0f2f5; }',
-
-    /* Template 7 */
-    '.template-7 { background:#e8f0f2; }',
-
-    /* Template 8 */
-    '.template-8 { background:#1a1a2e; color:#eee; }',
-
-    /* Template 9 */
-    '.template-9 { background:#fdeff2; }',
-
-    /* Template 10 */
-    '.template-10 { background:#1a1a1a; }',
-
-    /* Impression A4 une seule page */
-    '* { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }',
-    '@page { size:A4 portrait; margin:0; }',
-    '@media print {',
-    '  html, body { width:210mm; height:297mm; overflow:hidden; margin:0; padding:0; }',
-    '  .cv-content { page-break-inside:avoid; break-inside:avoid; }',
-    '}'
-].join('\n');
-
-// CSS compacté pour tenir en une page A4
-var PRINT_CSS = [
-    '.cv-content {',
-    '  width:190mm; max-width:190mm;',
-    '  padding:8mm 10mm !important;',
-    '  margin:0 auto !important;',
-    '  font-size:0.76rem !important;',
-    '  line-height:1.28 !important;',
-    '  background:white;',
-    '}',
-    '.cv-content .cv-name { font-size:1.35rem !important; }',
-    '.cv-content .cv-job { font-size:0.85rem !important; }',
-    '.cv-content .cv-photo { width:70px !important; height:70px !important; }',
-    '.cv-content .cv-header { padding:0.7rem !important; margin-bottom:0.7rem !important; border-radius:10px !important; gap:1rem !important; }',
-    '.cv-content .cv-contact { gap:0.4rem !important; font-size:0.68rem !important; }',
-    '.cv-content .cv-section { margin:0.4rem 0 !important; }',
-    '.cv-content .cv-section h3 { font-size:0.78rem !important; margin-bottom:0.2rem !important; padding-bottom:0.15rem !important; }',
-    '.cv-content .cv-text { font-size:0.72rem !important; line-height:1.22 !important; }',
-    '.cv-content .skill-tag { font-size:0.65rem !important; padding:0.08rem 0.35rem !important; }',
-    '.cv-content .flex-2cols { gap:0.5rem !important; }',
-    '.cv-content .skills-list { gap:0.2rem !important; margin-top:0.2rem !important; }'
-].join('\n');
-
+// Galerie des templates
 var templatesGrid = document.getElementById('templatesGrid');
 
 function initTemplatesGallery() {
@@ -152,6 +96,7 @@ function initTemplatesGallery() {
     });
 }
 
+// Génération du CV
 function generateCV() {
     var data = {
         fullname: elements.fullname.value || 'Nom Prénom',
@@ -173,14 +118,19 @@ function generateCV() {
     elements.cvPreview.innerHTML = '<div class="cv-content template-' + currentTemplate + '">' + cvHtml + '</div>';
 }
 
+// Clic sur le conteneur photo
 elements.photoContainer.addEventListener('click', function() {
     elements.photoUpload.click();
 });
 
+// Gestion de la photo
 elements.photoUpload.addEventListener('change', function(e) {
     var file = e.target.files[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { showToast("Image trop volumineuse (max 5 Mo)", 'error'); return; }
+    if (file.size > 5 * 1024 * 1024) {
+        showToast("L'image est trop volumineuse (max 5 Mo)", 'error');
+        return;
+    }
     var reader = new FileReader();
     reader.onload = function(ev) {
         currentPhotoBase64 = ev.target.result;
@@ -190,11 +140,14 @@ elements.photoUpload.addEventListener('change', function(e) {
     reader.readAsDataURL(file);
 });
 
+// Sauvegarde automatique
 function autoSave() {
     try {
         var formData = {};
         Object.keys(elements).forEach(function(key) {
-            if (elements[key] && elements[key].value !== undefined) { formData[key] = elements[key].value; }
+            if (elements[key] && elements[key].value !== undefined) {
+                formData[key] = elements[key].value;
+            }
         });
         formData.currentTemplate = currentTemplate;
         formData.currentPhotoBase64 = currentPhotoBase64;
@@ -208,21 +161,31 @@ function autoLoad() {
         if (!saved) return;
         var formData = JSON.parse(saved);
         Object.keys(formData).forEach(function(key) {
-            if (elements[key] && elements[key].value !== undefined) { elements[key].value = formData[key]; }
+            if (elements[key] && elements[key].value !== undefined) {
+                elements[key].value = formData[key];
+            }
         });
-        if (formData.currentTemplate) { currentTemplate = formData.currentTemplate; elements.templateSelect.value = currentTemplate; }
+        if (formData.currentTemplate) {
+            currentTemplate = formData.currentTemplate;
+            elements.templateSelect.value = currentTemplate;
+        }
         if (formData.currentPhotoBase64) {
             currentPhotoBase64 = formData.currentPhotoBase64;
             elements.photoContainer.innerHTML = '<img src="' + currentPhotoBase64 + '" style="width:100px;height:100px;border-radius:50%;object-fit:cover;">';
         }
         generateCV();
-    } catch(e) { console.error('Erreur chargement:', e); }
+    } catch(e) {
+        console.error('Erreur chargement sauvegarde:', e);
+    }
 }
 
+// Réinitialisation
 function resetForm() {
     if (confirm('Voulez-vous vraiment réinitialiser tous les champs ?')) {
         Object.keys(elements).forEach(function(key) {
-            if (elements[key] && elements[key].value !== undefined && key !== 'photoUpload') { elements[key].value = ''; }
+            if (elements[key] && elements[key].value !== undefined && key !== 'photoUpload') {
+                elements[key].value = '';
+            }
         });
         currentPhotoBase64 = null;
         elements.photoContainer.innerHTML = '<i class="fas fa-cloud-upload-alt"></i><span>Cliquez pour ajouter</span>';
@@ -233,41 +196,347 @@ function resetForm() {
     }
 }
 
-// PDF : CSS embarqué directement, aucun fetch, aucun CORS
+// Génération du PDF - VERSION CORRIGÉE
 function downloadPDF() {
     generateCV();
-    var cvElement = document.querySelector('.cv-content');
-    if (!cvElement) { showToast('Contenu introuvable', 'error'); return; }
+    
+    var cvElement = document.querySelector('.cv-preview .cv-content');
+    if (!cvElement) { 
+        showToast('Contenu introuvable', 'error'); 
+        return; 
+    }
 
-    var nom = elements.fullname.value || 'CV';
+    showToast('Préparation du PDF...', 'info');
+    
+    // Récupérer le HTML complet du CV
     var cvHTML = cvElement.outerHTML;
-
-    var html = '<!DOCTYPE html>'
-        + '<html lang="fr"><head>'
-        + '<meta charset="UTF-8">'
-        + '<title>CV - ' + nom + '</title>'
-        + '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">'
-        + '<style>' + EMBEDDED_CSS + '</style>'
-        + '<style>' + PRINT_CSS + '</style>'
-        + '</head><body>'
-        + cvHTML
-        + '<scr' + 'ipt>'
-        + 'window.onload=function(){'
-        + '  setTimeout(function(){'
-        + '    window.print();'
-        + '    window.onafterprint=function(){window.close();};'
-        + '  },800);'
-        + '};'
-        + '</scr' + 'ipt>'
-        + '</body></html>';
-
-    var printWindow = window.open('', '_blank', 'width=900,height=700');
-    if (!printWindow) { showToast('Autorisez les popups pour télécharger le PDF', 'error'); return; }
+    var templateNum = currentTemplate;
+    
+    // Styles de base essentiels (ceux qui ne sont pas dans les feuilles externes)
+    var essentialStyles = `
+        /* Reset et box-sizing */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            background: white;
+            margin: 0;
+            padding: 20px 0;
+        }
+        
+        /* Conteneur principal A4 */
+        .cv-content {
+            width: 190mm;
+            max-width: 190mm;
+            min-height: 277mm;
+            margin: 0 auto;
+            padding: 15mm 12mm !important;
+            background: white;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #2c3e50;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            box-shadow: none;
+        }
+        
+        /* Header */
+        .cv-header {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            margin-bottom: 1.2rem;
+            padding: 1rem 1.2rem;
+            border-radius: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .cv-photo {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        
+        .cv-titles {
+            flex: 1;
+        }
+        
+        .cv-name {
+            font-size: 22pt;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+        
+        .cv-job {
+            font-size: 11pt;
+            opacity: 0.85;
+            margin-bottom: 0.6rem;
+        }
+        
+        .cv-contact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            font-size: 8.5pt;
+        }
+        
+        .contact-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        
+        /* Sections */
+        .cv-section {
+            margin: 0.7rem 0;
+        }
+        
+        .cv-section h3 {
+            font-size: 12pt;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            padding-bottom: 0.25rem;
+            border-bottom: 2px solid currentColor;
+        }
+        
+        .cv-text {
+            line-height: 1.4;
+            white-space: pre-line;
+            font-size: 9.5pt;
+        }
+        
+        /* Compétences */
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.4rem;
+        }
+        
+        .skill-tag {
+            padding: 0.2rem 0.7rem;
+            background: rgba(0, 0, 0, 0.06);
+            border-radius: 20px;
+            font-size: 8.5pt;
+        }
+        
+        /* Grille 2 colonnes */
+        .flex-2cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.2rem;
+        }
+        
+        /* Icônes */
+        .fas, .far {
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+        }
+        
+        /* Page break A4 */
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            .cv-content {
+                page-break-after: avoid;
+                page-break-inside: avoid;
+                break-inside: avoid;
+            }
+        }
+    `;
+    
+    // Styles spécifiques par template (remplacement des dégradés par des couleurs unies)
+    var templateSpecificCSS = '';
+    
+    if (templateNum == 1) {
+        templateSpecificCSS = `
+            .cv-header {
+                background: #2c3e50 !important;
+                color: white !important;
+            }
+            .cv-header .cv-name, .cv-header .cv-job, .cv-header .cv-contact {
+                color: white !important;
+            }
+            .cv-section h3 {
+                color: #3498db !important;
+                border-bottom-color: #3498db !important;
+            }
+        `;
+    } else if (templateNum == 2) {
+        templateSpecificCSS = `
+            .cv-header {
+                border-bottom: 3px solid #2c3e50;
+                padding-bottom: 0.8rem;
+            }
+            .cv-section h3 {
+                color: #2c3e50;
+            }
+        `;
+    } else if (templateNum == 3) {
+        templateSpecificCSS = `
+            .cv-header {
+                text-align: center;
+                flex-direction: column;
+            }
+        `;
+    } else if (templateNum == 4) {
+        templateSpecificCSS = `
+            .cv-content {
+                background: #0a0e27 !important;
+                color: #e0e0e0 !important;
+            }
+            .cv-section h3 {
+                color: #00ff88 !important;
+                border-bottom-color: #00ff88 !important;
+            }
+            .skill-tag {
+                background: rgba(0, 255, 136, 0.15) !important;
+                color: #00ff88 !important;
+            }
+        `;
+    } else if (templateNum == 5) {
+        templateSpecificCSS = `
+            .cv-header {
+                background: #764ba2 !important;
+                color: white !important;
+                border-radius: 20px !important;
+            }
+        `;
+    } else if (templateNum == 6) {
+        templateSpecificCSS = `
+            .cv-section h3 {
+                color: #1a73e8 !important;
+                border-left: 3px solid #1a73e8 !important;
+                padding-left: 10px !important;
+                border-bottom: none !important;
+            }
+        `;
+    } else if (templateNum == 7) {
+        templateSpecificCSS = `
+            .cv-header {
+                background: #f5f5f5 !important;
+                text-align: center;
+            }
+        `;
+    } else if (templateNum == 8) {
+        templateSpecificCSS = `
+            .cv-content {
+                background: #1a1a2e !important;
+                color: #eee !important;
+            }
+            .cv-header {
+                background: #c0392b !important;
+                color: white !important;
+                margin: -15mm -12mm 1rem -12mm !important;
+                padding: 1.2rem !important;
+                border-radius: 0 !important;
+            }
+            .cv-section h3 {
+                color: #e74c3c !important;
+            }
+        `;
+    } else if (templateNum == 9) {
+        templateSpecificCSS = `
+            .cv-header {
+                text-align: center;
+                flex-direction: column;
+            }
+            .cv-name {
+                color: #e91e63 !important;
+            }
+        `;
+    } else if (templateNum == 10) {
+        templateSpecificCSS = `
+            .cv-header {
+                background: #1e3c72 !important;
+                color: white !important;
+                border-radius: 12px !important;
+            }
+            .cv-section h3 {
+                color: #1e3c72 !important;
+                border-bottom-color: #c9a84c !important;
+            }
+        `;
+    }
+    
+    // Construction de la page HTML pour l'impression
+    var html = `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>CV - ${escapeHtml(elements.fullname.value || 'Document')}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>${essentialStyles}</style>
+        <style>${templateSpecificCSS}</style>
+        <style>
+            /* Styles supplémentaires pour garantir l'affichage */
+            .cv-content .fas, .cv-content .far {
+                display: inline-block;
+                width: auto;
+            }
+            .cv-content br {
+                display: block;
+            }
+        </style>
+    </head>
+    <body>
+        ${cvHTML}
+        <script>
+            (function() {
+                // Attendre que tout soit chargé
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                        window.onafterprint = function() {
+                            window.close();
+                        };
+                    }, 300);
+                };
+            })();
+        <\/script>
+    </body>
+    </html>`;
+    
+    // Ouvrir la fenêtre d'impression
+    var printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
+    if (!printWindow) {
+        showToast("Veuillez autoriser les popups pour générer le PDF", 'error');
+        return;
+    }
+    
     printWindow.document.write(html);
     printWindow.document.close();
-    showToast('Choisissez "Enregistrer en PDF" dans la fenêtre d\'impression', 'success');
+    showToast("Choisissez 'Enregistrer en PDF' dans la fenêtre d'impression", 'success');
 }
 
+// Fonction d'échappement HTML
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
+
+// Toast
 function showToast(message, type) {
     var toast = document.getElementById('toast');
     toast.textContent = message;
@@ -275,18 +544,24 @@ function showToast(message, type) {
     setTimeout(function() { toast.classList.remove('show'); }, 3000);
 }
 
+// Navigation smooth
 document.querySelectorAll('.nav-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
         e.preventDefault();
-        document.querySelector(link.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+        var target = link.getAttribute('href');
+        document.querySelector(target).scrollIntoView({ behavior: 'smooth' });
         document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); });
         link.classList.add('active');
     });
 });
 
-['fullname','jobtitle','email','phone','location','birthdate','summary','experience','education','skills','languages','interests'].forEach(function(id) {
+// Listeners inputs
+var inputIds = ['fullname','jobtitle','email','phone','location','birthdate','summary','experience','education','skills','languages','interests'];
+inputIds.forEach(function(id) {
     var input = document.getElementById(id);
-    if (input) { input.addEventListener('input', function() { generateCV(); autoSave(); }); }
+    if (input) {
+        input.addEventListener('input', function() { generateCV(); autoSave(); });
+    }
 });
 
 elements.templateSelect.addEventListener('change', function(e) {
@@ -298,6 +573,7 @@ elements.templateSelect.addEventListener('change', function(e) {
 elements.downloadBtn.addEventListener('click', downloadPDF);
 elements.resetBtn.addEventListener('click', resetForm);
 
+// Init
 window.addEventListener('DOMContentLoaded', function() {
     initTemplatesGallery();
     autoLoad();
@@ -305,7 +581,10 @@ window.addEventListener('DOMContentLoaded', function() {
 
     var observer = new IntersectionObserver(function(entries) {
         entries.forEach(function(entry) {
-            if (entry.isIntersecting) { entry.target.style.opacity='1'; entry.target.style.transform='translateY(0)'; }
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
         });
     }, { threshold: 0.1 });
 
