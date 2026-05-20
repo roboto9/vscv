@@ -1,3 +1,11 @@
+// Utilitaire d'échappement HTML
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
 // Définition des 10 templates
 const templates = [
     {
@@ -235,11 +243,3 @@ const templates = [
         `
     }
 ];
-
-// Utilitaire d'échappement HTML
-function escapeHtml(str) {
-    if (!str) return '';
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
