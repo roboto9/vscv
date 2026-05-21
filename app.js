@@ -196,7 +196,7 @@ function resetForm() {
     }
 }
 
-// Génération du PDF - VERSION CORRIGÉE
+// Génération du PDF - VERSION CORRIGÉE (pleine page)
 function downloadPDF() {
     generateCV();
     
@@ -212,9 +212,9 @@ function downloadPDF() {
     var cvHTML = cvElement.outerHTML;
     var templateNum = currentTemplate;
     
-    // Styles de base essentiels (ceux qui ne sont pas dans les feuilles externes)
-    var essentialStyles = `
-        /* Reset et box-sizing */
+    // Styles pour une page A4 parfaitement remplie
+    var printStyles = `
+        /* Reset complet */
         * {
             margin: 0;
             padding: 0;
@@ -223,28 +223,33 @@ function downloadPDF() {
             print-color-adjust: exact !important;
         }
         
-        body {
-            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            background: white;
+        html, body {
+            width: 210mm;
+            height: 297mm;
             margin: 0;
-            padding: 20px 0;
+            padding: 0;
+            background: white;
         }
         
-        /* Conteneur principal A4 */
+        body {
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Conteneur principal - OCCUPE TOUTE LA PAGE */
         .cv-content {
-            width: 190mm;
-            max-width: 190mm;
-            min-height: 277mm;
-            margin: 0 auto;
-            padding: 15mm 12mm !important;
+            width: 100%;
+            height: 100%;
+            padding: 12mm 15mm !important;
             background: white;
             font-size: 10pt;
             line-height: 1.4;
             color: #2c3e50;
-            page-break-after: avoid;
-            page-break-inside: avoid;
-            break-inside: avoid;
-            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         
         /* Header */
@@ -252,15 +257,16 @@ function downloadPDF() {
             display: flex;
             gap: 1.5rem;
             align-items: center;
-            margin-bottom: 1.2rem;
+            margin-bottom: 1rem;
             padding: 1rem 1.2rem;
             border-radius: 12px;
             flex-wrap: wrap;
+            flex-shrink: 0;
         }
         
         .cv-photo {
-            width: 90px;
-            height: 90px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             object-fit: cover;
         }
@@ -270,13 +276,13 @@ function downloadPDF() {
         }
         
         .cv-name {
-            font-size: 22pt;
+            font-size: 24pt;
             font-weight: 700;
             margin-bottom: 0.3rem;
         }
         
         .cv-job {
-            font-size: 11pt;
+            font-size: 12pt;
             opacity: 0.85;
             margin-bottom: 0.6rem;
         }
@@ -284,8 +290,8 @@ function downloadPDF() {
         .cv-contact {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.8rem;
-            font-size: 8.5pt;
+            gap: 1rem;
+            font-size: 9pt;
         }
         
         .contact-item {
@@ -294,13 +300,21 @@ function downloadPDF() {
             gap: 0.4rem;
         }
         
+        /* Contenu principal - PREND L'ESPACE RESTANT */
+        .cv-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
         /* Sections */
         .cv-section {
-            margin: 0.7rem 0;
+            margin: 0.5rem 0;
         }
         
         .cv-section h3 {
-            font-size: 12pt;
+            font-size: 13pt;
             font-weight: 600;
             margin-bottom: 0.4rem;
             padding-bottom: 0.25rem;
@@ -308,31 +322,38 @@ function downloadPDF() {
         }
         
         .cv-text {
-            line-height: 1.4;
+            line-height: 1.45;
             white-space: pre-line;
-            font-size: 9.5pt;
+            font-size: 10pt;
         }
         
         /* Compétences */
         .skills-list {
             display: flex;
             flex-wrap: wrap;
-            gap: 0.4rem;
+            gap: 0.5rem;
             margin-top: 0.4rem;
         }
         
         .skill-tag {
-            padding: 0.2rem 0.7rem;
+            padding: 0.25rem 0.8rem;
             background: rgba(0, 0, 0, 0.06);
             border-radius: 20px;
-            font-size: 8.5pt;
+            font-size: 9pt;
         }
         
         /* Grille 2 colonnes */
         .flex-2cols {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1.2rem;
+            gap: 1.5rem;
+            flex: 1;
+        }
+        
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
         }
         
         /* Icônes */
@@ -341,14 +362,16 @@ function downloadPDF() {
             font-weight: 900;
         }
         
-        /* Page break A4 */
+        /* Page A4 */
         @page {
             size: A4 portrait;
             margin: 0;
         }
         
         @media print {
-            body {
+            html, body {
+                width: 210mm;
+                height: 297mm;
                 margin: 0;
                 padding: 0;
             }
@@ -358,6 +381,190 @@ function downloadPDF() {
                 break-inside: avoid;
             }
         }
+    `;
+    
+    // Styles spécifiques par template
+    var templateStyles = '';
+    
+    if (templateNum == 1) {
+        templateStyles = `
+            .cv-header {
+                background: #2c3e50 !important;
+                color: white !important;
+            }
+            .cv-header .cv-name, .cv-header .cv-job, .cv-header .cv-contact {
+                color: white !important;
+            }
+            .cv-section h3 {
+                color: #3498db !important;
+                border-bottom-color: #3498db !important;
+            }
+        `;
+    } else if (templateNum == 2) {
+        templateStyles = `
+            .cv-header {
+                border-bottom: 3px solid #2c3e50;
+                padding-bottom: 0.8rem;
+            }
+            .cv-section h3 {
+                color: #2c3e50;
+            }
+        `;
+    } else if (templateNum == 3) {
+        templateStyles = `
+            .cv-header {
+                text-align: center;
+                flex-direction: column;
+            }
+        `;
+    } else if (templateNum == 4) {
+        templateStyles = `
+            .cv-content {
+                background: #0a0e27 !important;
+                color: #e0e0e0 !important;
+            }
+            .cv-section h3 {
+                color: #00ff88 !important;
+                border-bottom-color: #00ff88 !important;
+            }
+            .skill-tag {
+                background: rgba(0, 255, 136, 0.15) !important;
+                color: #00ff88 !important;
+            }
+        `;
+    } else if (templateNum == 5) {
+        templateStyles = `
+            .cv-header {
+                background: #764ba2 !important;
+                color: white !important;
+                border-radius: 20px !important;
+            }
+        `;
+    } else if (templateNum == 6) {
+        templateStyles = `
+            .cv-section h3 {
+                color: #1a73e8 !important;
+                border-left: 3px solid #1a73e8 !important;
+                padding-left: 10px !important;
+                border-bottom: none !important;
+            }
+        `;
+    } else if (templateNum == 7) {
+        templateStyles = `
+            .cv-header {
+                background: #f5f5f5 !important;
+                text-align: center;
+            }
+        `;
+    } else if (templateNum == 8) {
+        templateStyles = `
+            .cv-content {
+                background: #1a1a2e !important;
+                color: #eee !important;
+            }
+            .cv-header {
+                background: #c0392b !important;
+                color: white !important;
+                margin: -12mm -15mm 1rem -15mm !important;
+                padding: 1.2rem !important;
+                border-radius: 0 !important;
+            }
+            .cv-section h3 {
+                color: #e74c3c !important;
+            }
+        `;
+    } else if (templateNum == 9) {
+        templateStyles = `
+            .cv-header {
+                text-align: center;
+                flex-direction: column;
+            }
+            .cv-name {
+                color: #e91e63 !important;
+            }
+        `;
+    } else if (templateNum == 10) {
+        templateStyles = `
+            .cv-header {
+                background: #1e3c72 !important;
+                color: white !important;
+                border-radius: 12px !important;
+            }
+            .cv-section h3 {
+                color: #1e3c72 !important;
+                border-bottom-color: #c9a84c !important;
+            }
+        `;
+    }
+    
+    // Améliorer la structure HTML du CV pour qu'elle utilise flexbox
+    var enhancedCVHTML = cvHTML.replace(
+        /(<div class="cv-content[\s\S]*?>)([\s\S]*?)(<\/div>)/,
+        function(match, openTag, content, closeTag) {
+            // Ajouter la structure flex si elle n'existe pas déjà
+            if (!content.includes('cv-main')) {
+                // Diviser le contenu entre header et le reste
+                var headerMatch = content.match(/(<div class="cv-header">[\s\S]*?<\/div>)/);
+                var header = headerMatch ? headerMatch[1] : '';
+                var rest = headerMatch ? content.replace(header, '') : content;
+                
+                return openTag + header + '<div class="cv-main">' + rest + '</div>' + closeTag;
+            }
+            return match;
+        }
+    );
+    
+    // Construction de la page HTML pour l'impression
+    var html = `<!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <title>CV - ${escapeHtml(elements.fullname.value || 'Document')}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        <style>${printStyles}</style>
+        <style>${templateStyles}</style>
+        <style>
+            /* Ajustements supplémentaires */
+            .cv-content .fas, .cv-content .far {
+                display: inline-block;
+                width: auto;
+            }
+            .cv-content br {
+                display: block;
+                content: "";
+                margin: 0.2rem 0;
+            }
+        </style>
+    </head>
+    <body>
+        ${enhancedCVHTML}
+        <script>
+            (function() {
+                window.onload = function() {
+                    setTimeout(function() {
+                        window.print();
+                        window.onafterprint = function() {
+                            window.close();
+                        };
+                    }, 300);
+                };
+            })();
+        <\/script>
+    </body>
+    </html>`;
+    
+    // Ouvrir la fenêtre d'impression
+    var printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
+    if (!printWindow) {
+        showToast("Veuillez autoriser les popups pour générer le PDF", 'error');
+        return;
+    }
+    
+    printWindow.document.write(html);
+    printWindow.document.close();
+    showToast("Choisissez 'Enregistrer en PDF' dans la fenêtre d'impression", 'success');
+}
     `;
     
     // Styles spécifiques par template (remplacement des dégradés par des couleurs unies)
