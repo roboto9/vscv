@@ -41,31 +41,6 @@ var previewData = {
     photo: null
 };
 
-// Récupérer TOUS les styles CSS (incluant les styles inline et importés)
-function getAllCSS() {
-    var cssText = '';
-    
-    // 1. Récupérer les styles des feuilles de style
-    for (var i = 0; i < document.styleSheets.length; i++) {
-        try {
-            var sheet = document.styleSheets[i];
-            if (sheet.cssRules) {
-                for (var j = 0; j < sheet.cssRules.length; j++) {
-                    var rule = sheet.cssRules[j];
-                    if (rule.cssText) {
-                        cssText += rule.cssText + '\n';
-                    }
-                }
-            }
-        } catch(e) {
-            // Ignorer les erreurs CORS
-            console.log('StyleSheet non accessible:', e);
-        }
-    }
-    
-    return cssText;
-}
-
 // Galerie des templates
 var templatesGrid = document.getElementById('templatesGrid');
 
@@ -196,7 +171,7 @@ function resetForm() {
     }
 }
 
-// Génération du PDF - VERSION CORRIGÉE (pleine page)
+// Génération du PDF - VERSION QUI REMPLIT TOUTE LA PAGE A4
 function downloadPDF() {
     generateCV();
     
@@ -212,7 +187,7 @@ function downloadPDF() {
     var cvHTML = cvElement.outerHTML;
     var templateNum = currentTemplate;
     
-    // Styles pour une page A4 parfaitement remplie
+    // Styles pour une page A4 parfaitement remplie (sans affecter l'affichage principal)
     var printStyles = `
         /* Reset complet */
         * {
@@ -249,7 +224,9 @@ function downloadPDF() {
             color: #2c3e50;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+            break-inside: avoid;
         }
         
         /* Header */
@@ -498,21 +475,19 @@ function downloadPDF() {
     }
     
     // Améliorer la structure HTML du CV pour qu'elle utilise flexbox
-    var enhancedCVHTML = cvHTML.replace(
-        /(<div class="cv-content[\s\S]*?>)([\s\S]*?)(<\/div>)/,
-        function(match, openTag, content, closeTag) {
-            // Ajouter la structure flex si elle n'existe pas déjà
-            if (!content.includes('cv-main')) {
-                // Diviser le contenu entre header et le reste
+    var enhancedCVHTML = cvHTML;
+    // Ajouter cv-main si nécessaire
+    if (!cvHTML.includes('cv-main')) {
+        enhancedCVHTML = cvHTML.replace(
+            /(<div class="cv-content[\s\S]*?>)([\s\S]*?)(<\/div>)/,
+            function(match, openTag, content, closeTag) {
                 var headerMatch = content.match(/(<div class="cv-header">[\s\S]*?<\/div>)/);
                 var header = headerMatch ? headerMatch[1] : '';
                 var rest = headerMatch ? content.replace(header, '') : content;
-                
                 return openTag + header + '<div class="cv-main">' + rest + '</div>' + closeTag;
             }
-            return match;
-        }
-    );
+        );
+    }
     
     // Construction de la page HTML pour l'impression
     var html = `<!DOCTYPE html>
@@ -525,15 +500,9 @@ function downloadPDF() {
         <style>${printStyles}</style>
         <style>${templateStyles}</style>
         <style>
-            /* Ajustements supplémentaires */
             .cv-content .fas, .cv-content .far {
                 display: inline-block;
                 width: auto;
-            }
-            .cv-content br {
-                display: block;
-                content: "";
-                margin: 0.2rem 0;
             }
         </style>
     </head>
@@ -541,172 +510,6 @@ function downloadPDF() {
         ${enhancedCVHTML}
         <script>
             (function() {
-                window.onload = function() {
-                    setTimeout(function() {
-                        window.print();
-                        window.onafterprint = function() {
-                            window.close();
-                        };
-                    }, 300);
-                };
-            })();
-        <\/script>
-    </body>
-    </html>`;
-    
-    // Ouvrir la fenêtre d'impression
-    var printWindow = window.open('', '_blank', 'width=900,height=700,toolbar=yes,menubar=yes');
-    if (!printWindow) {
-        showToast("Veuillez autoriser les popups pour générer le PDF", 'error');
-        return;
-    }
-    
-    printWindow.document.write(html);
-    printWindow.document.close();
-    showToast("Choisissez 'Enregistrer en PDF' dans la fenêtre d'impression", 'success');
-}
-    `;
-    
-    // Styles spécifiques par template (remplacement des dégradés par des couleurs unies)
-    var templateSpecificCSS = '';
-    
-    if (templateNum == 1) {
-        templateSpecificCSS = `
-            .cv-header {
-                background: #2c3e50 !important;
-                color: white !important;
-            }
-            .cv-header .cv-name, .cv-header .cv-job, .cv-header .cv-contact {
-                color: white !important;
-            }
-            .cv-section h3 {
-                color: #3498db !important;
-                border-bottom-color: #3498db !important;
-            }
-        `;
-    } else if (templateNum == 2) {
-        templateSpecificCSS = `
-            .cv-header {
-                border-bottom: 3px solid #2c3e50;
-                padding-bottom: 0.8rem;
-            }
-            .cv-section h3 {
-                color: #2c3e50;
-            }
-        `;
-    } else if (templateNum == 3) {
-        templateSpecificCSS = `
-            .cv-header {
-                text-align: center;
-                flex-direction: column;
-            }
-        `;
-    } else if (templateNum == 4) {
-        templateSpecificCSS = `
-            .cv-content {
-                background: #0a0e27 !important;
-                color: #e0e0e0 !important;
-            }
-            .cv-section h3 {
-                color: #00ff88 !important;
-                border-bottom-color: #00ff88 !important;
-            }
-            .skill-tag {
-                background: rgba(0, 255, 136, 0.15) !important;
-                color: #00ff88 !important;
-            }
-        `;
-    } else if (templateNum == 5) {
-        templateSpecificCSS = `
-            .cv-header {
-                background: #764ba2 !important;
-                color: white !important;
-                border-radius: 20px !important;
-            }
-        `;
-    } else if (templateNum == 6) {
-        templateSpecificCSS = `
-            .cv-section h3 {
-                color: #1a73e8 !important;
-                border-left: 3px solid #1a73e8 !important;
-                padding-left: 10px !important;
-                border-bottom: none !important;
-            }
-        `;
-    } else if (templateNum == 7) {
-        templateSpecificCSS = `
-            .cv-header {
-                background: #f5f5f5 !important;
-                text-align: center;
-            }
-        `;
-    } else if (templateNum == 8) {
-        templateSpecificCSS = `
-            .cv-content {
-                background: #1a1a2e !important;
-                color: #eee !important;
-            }
-            .cv-header {
-                background: #c0392b !important;
-                color: white !important;
-                margin: -15mm -12mm 1rem -12mm !important;
-                padding: 1.2rem !important;
-                border-radius: 0 !important;
-            }
-            .cv-section h3 {
-                color: #e74c3c !important;
-            }
-        `;
-    } else if (templateNum == 9) {
-        templateSpecificCSS = `
-            .cv-header {
-                text-align: center;
-                flex-direction: column;
-            }
-            .cv-name {
-                color: #e91e63 !important;
-            }
-        `;
-    } else if (templateNum == 10) {
-        templateSpecificCSS = `
-            .cv-header {
-                background: #1e3c72 !important;
-                color: white !important;
-                border-radius: 12px !important;
-            }
-            .cv-section h3 {
-                color: #1e3c72 !important;
-                border-bottom-color: #c9a84c !important;
-            }
-        `;
-    }
-    
-    // Construction de la page HTML pour l'impression
-    var html = `<!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>CV - ${escapeHtml(elements.fullname.value || 'Document')}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-        <style>${essentialStyles}</style>
-        <style>${templateSpecificCSS}</style>
-        <style>
-            /* Styles supplémentaires pour garantir l'affichage */
-            .cv-content .fas, .cv-content .far {
-                display: inline-block;
-                width: auto;
-            }
-            .cv-content br {
-                display: block;
-            }
-        </style>
-    </head>
-    <body>
-        ${cvHTML}
-        <script>
-            (function() {
-                // Attendre que tout soit chargé
                 window.onload = function() {
                     setTimeout(function() {
                         window.print();
